@@ -52,7 +52,7 @@ public class Camera2StateMachine {
 	private Rect mCurrentRect;
 
 	public interface Callback{
-		public abstract void setFov(Map<String, String> fovMab);
+		public abstract void setFov(Map<String, String> fovMab, Rect cropRect);
 	}
 
 	public Camera2StateMachine(Activity activity, AutoFitTextureView textureView){
@@ -75,28 +75,18 @@ public class Camera2StateMachine {
 
 	public Rect getRect(){
 		return mCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+		//return mCameraParam.createOutputRegion(mCameraParam.getSensorActiveRegion());
 	}
+
+	public String getCameraBasicInfo(){
+		return mCameraParam.toString();
+	}
+
 	public void setAspectRate(double rate){
 		mCameraParam.setOutputAspectRate(rate);
 		if(mState == mPreviewState){
 			try{
-				if(rate > 1.5){
-//					mTextureView.setPreviewSize(3000, 6000);
-//					mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-//					SurfaceTexture texture = mTextureView.getSurfaceTexture();
-//					texture.setDefaultBufferSize(2500, 4000);
-//					Surface surface = new Surface(texture);
-//					mPreviewRequestBuilder.removeTarget(surface);
-//					mPreviewRequestBuilder.addTarget(surface);
-//					mCameraDevice.
-					mTextureView.setPreviewSize(720, 1280 );
-				}else{
-//					mTextureView.setPreviewSize(3000, 4000);
-					mTextureView.setPreviewSize(3032, 4032 );
-				}
-				//mState.aspectChanged();
 				nextState(mAbortState);
-				//nextState(mOpenCameraState);
 			}catch(Exception e){
 				e.printStackTrace();
 			}
@@ -172,7 +162,6 @@ public class Camera2StateMachine {
 		public void onSurfaceTextureAvailable(int width, int height) { }
 		public void onCameraOpened(CameraDevice cameraDevice) { }
 		public void zoom(Rect zoomRect) throws CameraAccessException{ }
-		public void aspectChanged() throws CameraAccessException{ }
 		public void onSessionConfigured(CameraCaptureSession cameraCaptureSession) { }
 		public void onCaptureResult(CaptureResult result, boolean isCompleted) throws CameraAccessException { }
 		public void finish() throws CameraAccessException { }
@@ -213,6 +202,7 @@ public class Camera2StateMachine {
 
 			@Override
 			public void onSurfaceTextureUpdated(SurfaceTexture texture) {
+				Log.v("abeabe", "fdfffd");
 			}
 		};
 	};
@@ -225,7 +215,6 @@ public class Camera2StateMachine {
 		public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
 			onCaptureResult(result, true);
 			Rect r = result.get(CaptureResult.SCALER_CROP_REGION);
-			//Log.v("abe1", r.toString());
 		}
 		private void onCaptureResult(CaptureResult result, boolean isCompleted) {
 			try {
@@ -246,25 +235,13 @@ public class Camera2StateMachine {
 			String cameraId = Camera2Util.getCameraId(mCameraManager, CameraCharacteristics.LENS_FACING_BACK);
 			StreamConfigurationMap map = mCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
-			mImageReader = Camera2Util.getMaxSizeImageReader(map, ImageFormat.JPEG);
-//			mImageReader = ImageReader.newInstance(
-//					//maxSize.getWidth(), maxSize.getHeight(), // for landscape.
-//					1800, 3600, // for portrait.
-//					ImageFormat.JPEG, /*maxImages*/1);
-			Rect rect = mCameraParam.createOutputRegion(mCameraParam.getSensorActiveRegion());
-			Log.v("abe111", rect.toString());
-//			mImageReader = ImageReader.newInstance(
-//					//maxSize.getWidth(), maxSize.getHeight(), // for landscape.
-//					rect.height() * 2 , rect.width() * 2  , // for portrait.
-//					ImageFormat.JPEG, /*maxImages*/1);
-			//Size previewSize = Camera2Util.getBestPreviewSize(map, mImageReader);
-			//mTextureView.setPreviewSize(previewSize.getHeight(), previewSize.getWidth());
-			//mTextureView.setPreviewSize(rect.height(), rect.width() );
-			if(mCameraParam.getOutputAspectRate() > 1.5){
-				mTextureView.setPreviewSize(480, 800 );
-			}else{
-				mTextureView.setPreviewSize(360, 480 );
-			}
+			    Size size = Camera2Util.getBestPreviewSize2(map, mCameraParam.getOutputAspectRate());
+				mImageReader = ImageReader.newInstance(
+					//maxSize.getWidth(), maxSize.getHeight(), // for landscape.
+                        size.getWidth(), size.getHeight(), // for portrait.
+					ImageFormat.JPEG, /*maxImages*/1);
+				mTextureView.setPreviewSize(size.getHeight(), size.getWidth());
+
 
 			if (ActivityCompat.checkSelfPermission(mCon, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
 				// TODO: Consider calling
@@ -305,12 +282,13 @@ public class Camera2StateMachine {
 		public void enter() throws CameraAccessException {
 			mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
 			SurfaceTexture texture = mTextureView.getSurfaceTexture();
-			texture.setDefaultBufferSize(mTextureView.getPreviewWidth(), mTextureView.getPreviewHeight());
+			Log.v("abe123", String.valueOf(mTextureView.getPreviewWidth()));
+//				texture.setDefaultBufferSize(mTextureView.getPreviewWidth(), mTextureView.getPreviewHeight());
 			Surface surface = new Surface(texture);
-			mPreviewRequestBuilder.removeTarget(surface);
+			//mPreviewRequestBuilder.removeTarget(surface);
 			mPreviewRequestBuilder.addTarget(surface);
-			//List<Surface> outputs = Arrays.asList(surface, mImageReader.getSurface());
-			List<Surface> outputs = Arrays.asList(surface);
+			List<Surface> outputs = Arrays.asList(surface, mImageReader.getSurface());
+			//List<Surface> outputs = Arrays.asList(surface);
 			mCameraDevice.createCaptureSession(outputs, mSessionCallback, mHandler);
 		}
 		public void onSessionConfigured(CameraCaptureSession cameraCaptureSession) {
@@ -332,33 +310,31 @@ public class Camera2StateMachine {
 	// -----------------------------------------------------------------------------------
 	private final State mPreviewState = new State("Preview") {
 		public void enter() throws CameraAccessException {
-			mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-			mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+			//mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+			//mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 			Rect rect = mCameraParam.createOutputRegion(mCameraParam.getSensorActiveRegion());
-			mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, rect);
+			Log.v("abe123", String.valueOf(rect.top) + " " + String.valueOf(rect.left) + " " + String.valueOf(rect.width()) + " " + String.valueOf(rect.height()));
+			//mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, rect);
 			mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, mHandler);
 			//mTextureView.setPreviewSize(rect.height(), rect.width() );
 		}
 		@Override
 		public void zoom(Rect zoomRect) throws CameraAccessException{
 			//mCameraParam.setCroppingRegion(zoomRect);
-			zoomRect = mCameraParam.createOutputRegion(zoomRect);
+			//
+			// zoomRect = mCameraParam.createOutputRegion(zoomRect);
 			mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomRect);
 			mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, mHandler);
 		}
 		@Override
-		public void aspectChanged() throws CameraAccessException{
-			//Rect rect = mCameraParam.createOutputRegion();
-			//Log.v("abe123", rect.toString());
-			//mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, rect);
-			//mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, mHandler);
-		}
-		@Override
 		public void onCaptureResult(CaptureResult result, boolean isCompleted) throws CameraAccessException {
 			Rect r = result.get(CaptureResult.SCALER_CROP_REGION);
+			//Size size = result.get(CaptureResult.J);
 			if(r != null){
-				Map map = mCameraParam.calcFov(r);
-				mCallback.setFov(map);
+				Log.v("abe12345", r.toString());
+				Rect rect = mCameraParam.createOutputRegion(r);
+				Map map = mCameraParam.calcFov(rect);
+				mCallback.setFov(map, r);
 			}
 		}
 	};

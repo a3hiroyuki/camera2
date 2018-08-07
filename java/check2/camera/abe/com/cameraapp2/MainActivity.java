@@ -30,12 +30,13 @@ public class MainActivity extends Activity implements Camera2StateMachine.Callba
 	public static String VERTICAL_FOV = "sss";
 
 	//Zooming
-	protected float fingerSpacing = 0;
-	protected float zoomLevel = 1f;
+	protected float mFingerSpacing = 0;
+	protected float mZoomLevel = 1f;
 	protected float maximumZoomLevel;
 	protected Rect zoom;
 
-	private TextView mVerFovTxt, mHorFovTxt;
+	private TextView mVerFovTxt, mHorFovTxt,
+			          mZoomRationTxt, mCropRegionTxt, mBasicInfoTxt;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -44,13 +45,18 @@ public class MainActivity extends Activity implements Camera2StateMachine.Callba
 
 		mHorFovTxt = (TextView) findViewById(R.id.hor_fov);
 		mVerFovTxt = (TextView) findViewById(R.id.ver_fov);
+		mZoomRationTxt = (TextView)findViewById(R.id.zoom_ration);
+		mCropRegionTxt = (TextView)findViewById(R.id.crop_region);
+		mBasicInfoTxt = (TextView)findViewById(R.id.basic_info);
 
 		mTextureView = (AutoFitTextureView) findViewById(R.id.TextureView);
 		mImageView = (ImageView) findViewById(R.id.ImageView);
 		mCamera2 = new Camera2StateMachine(this, mTextureView);
 
+		mBasicInfoTxt.setText(mCamera2.getCameraBasicInfo());
+
 		RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radiogroup);
-		radioGroup.check(R.id.radiobutton_red);
+		radioGroup.check(R.id.radiobutton_green);
 		RadioButton radioButton = (RadioButton) findViewById(radioGroup.getCheckedRadioButtonId());
 		radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
 			public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -62,6 +68,7 @@ public class MainActivity extends Activity implements Camera2StateMachine.Callba
 				}
 				mCamera2.setAspectRate(aspectRate);
 				mCamera2.open(MainActivity.this, mTextureView);
+				initZooming();
 			}
 		});
 
@@ -117,23 +124,22 @@ public class MainActivity extends Activity implements Camera2StateMachine.Callba
 			Rect rect = mCamera2.getRect();
 			if (rect == null) return false;
 			float currentFingerSpacing;
-
 			if (event.getPointerCount() == 2) { //Multi touch.
 				currentFingerSpacing = getFingerSpacing(event);
 				float delta = 0.05f; //Control this value to control the zooming sensibility
-				if (fingerSpacing != 0) {
-					if (currentFingerSpacing > fingerSpacing) { //Don't over zoom-in
-						if ((maximumZoomLevel - zoomLevel) <= delta) {
-							delta = maximumZoomLevel - zoomLevel;
+				if (mFingerSpacing != 0) {
+					if (currentFingerSpacing > mFingerSpacing) { //Don't over zoom-in
+						if ((maximumZoomLevel - mZoomLevel) <= delta) {
+							delta = maximumZoomLevel - mZoomLevel;
 						}
-						zoomLevel = zoomLevel + delta;
-					} else if (currentFingerSpacing < fingerSpacing) { //Don't over zoom-out
-						if ((zoomLevel - delta) < 1f) {
-							delta = zoomLevel - 1f;
+						mZoomLevel = mZoomLevel + delta;
+					} else if (currentFingerSpacing < mFingerSpacing) { //Don't over zoom-out
+						if ((mZoomLevel - delta) < 1f) {
+							delta = mZoomLevel - 1f;
 						}
-						zoomLevel = zoomLevel - delta;
+						mZoomLevel = mZoomLevel - delta;
 					}
-					float ratio = (float) 1 / zoomLevel; //This ratio is the ratio of cropped Rect to Camera's original(Maximum) Rect
+					float ratio = (float) 1 / mZoomLevel; //This ratio is the ratio of cropped Rect to Camera's original(Maximum) Rect
 					//croppedWidth and croppedHeight are the pixels cropped away, not pixels after cropped
 					int croppedWidth = rect.width() - Math.round((float) rect.width() * ratio);
 					int croppedHeight = rect.height() - Math.round((float) rect.height() * ratio);
@@ -144,7 +150,8 @@ public class MainActivity extends Activity implements Camera2StateMachine.Callba
 					Log.v("abe33", zoom.toString());
 					mCamera2.zoom(zoom);
 				}
-				fingerSpacing = currentFingerSpacing;
+				mFingerSpacing = currentFingerSpacing;
+				mZoomRationTxt.setText(String.format("× %.2f", mZoomLevel));
 			} else { //Single touch point, needs to return true in order to detect one more touch point
 				return true;
 			}
@@ -157,6 +164,12 @@ public class MainActivity extends Activity implements Camera2StateMachine.Callba
 		}
 	}
 
+	private void initZooming(){
+		mFingerSpacing = 0;
+		mZoomLevel = 1f;
+		mZoomRationTxt.setText("×1");
+	}
+
 	private float getFingerSpacing(MotionEvent event) {
 		float x = event.getX(0) - event.getX(1);
 		float y = event.getY(0) - event.getY(1);
@@ -164,8 +177,9 @@ public class MainActivity extends Activity implements Camera2StateMachine.Callba
 	}
 
 	@Override
-	public void setFov(Map<String, String> fovMap) {
+	public void setFov(Map<String, String> fovMap, Rect cropRect) {
 		mHorFovTxt.setText(fovMap.get(HORIZONTAL_FOV));
 		mVerFovTxt.setText(fovMap.get(VERTICAL_FOV));
+		mCropRegionTxt.setText(String.format("crop領域：%d × %d", cropRect.width(), cropRect.height()));
 	}
 }

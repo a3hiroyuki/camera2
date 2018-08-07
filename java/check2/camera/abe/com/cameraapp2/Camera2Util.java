@@ -1,5 +1,6 @@
 package check2.camera.abe.com.cameraapp2;
 
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -50,6 +51,23 @@ public class Camera2Util {
 		for (Size size : previewSizes) {
 			float previewAspect = (float) size.getWidth() / size.getHeight();
 			float diff = Math.abs(imageAspect - previewAspect);
+			if (diff < minDiff) {
+				previewSize = size;
+				minDiff = diff;
+			}
+			if (diff == 0.0F) break;
+		}
+		return previewSize;
+	}
+
+	public static Size getBestPreviewSize2(StreamConfigurationMap map, double aspectRation) throws CameraAccessException {
+		double minDiff = 1000000000000D;
+		//Size[] previewSizes = map.getOutputSizes(ImageFormat.JPEG);
+		Size[] previewSizes = map.getOutputSizes(SurfaceTexture.class);
+		Size previewSize = previewSizes[0];
+		for (Size size : previewSizes) {
+			double previewAspect = (double) size.getWidth() / size.getHeight();
+			double diff = Math.abs(aspectRation - previewAspect);
 			if (diff < minDiff) {
 				previewSize = size;
 				minDiff = diff;

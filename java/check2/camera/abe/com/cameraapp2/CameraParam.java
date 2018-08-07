@@ -73,8 +73,9 @@ public class CameraParam {
         final int centerX = mSensorActiveRegion.width() / 2;
         final int centerY = mSensorActiveRegion.height() / 2;
         //final int cropSize = Math.min(mSensorSize.width(), mSensorSize.height());
-        return new Rect((centerY - (int)outputSensorWidth) / 2,
-                (centerX - (int)outputSensorHeight) / 2,  (int)outputSensorWidth, (int)outputSensorHeight);
+        Rect rect2 = new Rect(0,
+                0,  (int)outputSensorWidth, (int)outputSensorHeight);
+        return rect2;
 //        return new Rect(rect.left, rect.top,
 //                rect.left + (int)outputSensorWidth, rect.top + (int)outputSensorHeight);
     }
@@ -94,15 +95,15 @@ public class CameraParam {
 
     @Override
     public String toString() {
-        String z = String.format("センサアスペクト比：%.2f", mSensorAspectRate);
+        //String z = String.format("センサアスペクト比：%.2f", mSensorAspectRate);
         String a = String.format("焦点距離：%s [mm]", String.valueOf(mFocusArr[0]));
         String b = String.format("センササイズ： %.2f × %.2f [mm2]", mSensorSize.getWidth(), mSensorSize.getHeight());
-        String c = String.format("センサの画素数： %d × %d", mSensorPixelSize.getWidth(), mSensorPixelSize.getHeight());
-        String d = String.format("切り取り領域： %d × %d", mSensorActiveRegion.width(), mSensorActiveRegion.height());
+        // String c = String.format("センサの画素数： %d × %d", mSensorPixelSize.getWidth(), mSensorPixelSize.getHeight());
+        String c = String.format("センサ有効画素： %d × %d", mSensorActiveRegion.width(), mSensorActiveRegion.height());
         //String e = String.format("出力アスペクト比指定時センササイズ： %.2f × %.2f", calcSensorWidthOfStream(), calcSensorHeightOfStream());
-        String fov1 = "水平画角：" + String.valueOf(calcFov(mSensorOutputSize.getWidth()));
-        String fov2 = "垂直画角：" + String.valueOf(calcFov(mSensorOutputSize.getHeight()));
-        return String.format("%s\n%s\n%s\n%s\n%s\n%s\n%s", z, a, b, c, d, fov1, fov2);
+        //String fov1 = "水平画角：" + String.valueOf(calcFov(mSensorOutputSize.getWidth()));
+        //String fov2 = "垂直画角：" + String.valueOf(calcFov(mSensorOutputSize.getHeight()));
+        return String.format("%s\n%s\n%s", a, b, c);
     }
 
     private double calcWidthSensorSize(double size){

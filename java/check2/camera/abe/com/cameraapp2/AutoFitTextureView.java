@@ -77,8 +77,8 @@ public class AutoFitTextureView extends TextureView {
             if (width < height * mRatioWidth / mRatioHeight) {
                 setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
             } else {
-                //setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
-                setMeasuredDimension(width , (int)(height));
+                setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+                //setMeasuredDimension(width , (int)(height));
             }
         }
     }

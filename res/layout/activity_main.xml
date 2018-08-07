@@ -6,12 +6,9 @@
     tools:context=".MainActivity" >
 
     <RadioGroup android:id="@+id/radiogroup"
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
-        <RadioButton android:id="@+id/radiobutton_red"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="full_size" />
         <RadioButton android:id="@+id/radiobutton_green"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -22,40 +19,72 @@
             android:text="16:9" />
     </RadioGroup>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/zoom_ration"
+        android:text="×1" />
+
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0px"
-        android:layout_weight="1" >
+        android:layout_height="0dp"
+        android:layout_weight="5">
 
         <check2.camera.abe.com.cameraapp2.AutoFitTextureView
             android:id="@+id/TextureView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_gravity="center" />
 
         <ImageView
             android:id="@+id/ImageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="centerInside"
             android:visibility="gone" />
     </FrameLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/hor_fov"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:layout_weight="1">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/ver_fov"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/basic_info"/>
 
-    <ImageButton
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/crop_region"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:id="@+id/hor_fov"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:id="@+id/ver_fov"/>
+
+        </LinearLayout>
+
+        <ImageButton
         android:id="@+id/imageButton1"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:onClick="onClickShutter"
         android:src="@android:drawable/ic_menu_camera" />
+
+    </LinearLayout>
 
 </LinearLayout>
